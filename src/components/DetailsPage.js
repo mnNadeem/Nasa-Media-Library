@@ -2,6 +2,7 @@ import React from "react";
 import { Button } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
 import styled from "styled-components";
+import Card from "react-bootstrap/Card";
 
 const Conatiner = styled.div`
   display: flex;
@@ -60,21 +61,38 @@ const ButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-top: 30px;
-  @media (max-width: 700px) {
-    margin-bottom: 30px;
+
+  margin-bottom: 30px;
+`;
+
+const ImagesContainer = styled.div`
+  margin: 80px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 3rem;
+
+  @media (max-width: 749px) {
+    justify-content: center;
   }
+`;
+
+const CardImage = styled(Card.Img)`
+  width: 100%;
+  height: 18rem;
+  object-fit: cover;
 `;
 
 const DetailsPage = () => {
   const {
-    state: { result, uniqueImages },
+    state: { searchResult, uniqueImages },
   } = useLocation();
   const {
     data: [
       { title, description, photographer, location, keywords, date_created },
     ],
     links: [{ href }],
-  } = result;
+  } = searchResult;
 
   return (
     <>
@@ -111,6 +129,13 @@ const DetailsPage = () => {
           </p>
         </RightContainer>
       </Conatiner>
+      <ImagesContainer>
+        {uniqueImages.map((image, index) => (
+          <Card style={{ width: "18rem" }} key={index}>
+            <CardImage variant="top" src={image} loading="lazy" />
+          </Card>
+        ))}
+      </ImagesContainer>
       <ButtonContainer>
         <Link to="/">
           <Button>Go Back to Search Page</Button>

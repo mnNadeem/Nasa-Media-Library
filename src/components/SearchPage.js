@@ -97,12 +97,16 @@ const StyledLink = styled(Link)`
   text-decoration: none;
 `;
 
+const StarIcon = styled.span`
+  color: #ff0000;
+`;
+
 const Search = () => {
   const [query, setQuery] = useState("");
   const [yearStart, setYearStart] = useState("");
   const [yearEnd, setYearEnd] = useState("");
-  const [results, setResults] = useState([]);
-  const [show, setShow] = useState(true);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showAlert, setShowAlert] = useState(true);
   const [responseError, setResponseError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [uniqueImages, setUniqueImages] = useState([]);
@@ -119,7 +123,13 @@ const Search = () => {
     setUniqueImages(uniqueLinks);
   };
 
-  const updateResults = async (response) => {
+  const updateErrorsAndSearchResults = (errorMessage) => {
+    setResponseError(errorMessage);
+    setShowAlert(true);
+    setSearchResults([]);
+  };
+
+  const updateSearchResults = async (response) => {
     switch (response.status) {
       case 200: {
         const data = await response.json();
@@ -129,69 +139,72 @@ const Search = () => {
           setResponseError(
             "No data available for this search! Reset Your Search"
           );
-          setShow(true);
+          setShowAlert(true);
         }
-        setResults(items);
+        setSearchResults(items);
         clearInputFields();
         break;
       }
       case 400:
-        setResponseError(
+        updateErrorsAndSearchResults(
           "The request was unacceptable, often due to invalid parameters."
         );
-        setShow(true);
-        setResults([]);
         break;
       case 404:
-        setResponseError("The requested resource doesn’t exist.");
-        setShow(true);
-        setResults([]);
+        updateErrorsAndSearchResults("The requested resource doesn’t exist.");
         break;
       case 500:
       case 502:
       case 503:
       case 504:
-        setResponseError("Internal Server Error");
-        setShow(true);
-        setResults([]);
+        updateErrorsAndSearchResults("Internal Server Error");
         break;
       default:
-        setResponseError("Something went wrong. Please try again later");
-        setShow(true);
-        setResults([]);
+        updateErrorsAndSearchResults(
+          "Something went wrong. Please try again later"
+        );
     }
   };
 
   const handleSearch = async () => {
     try {
-      setShow(false);
+      setShowAlert(false);
       setIsLoading(true);
       const response = await fetch(
         `https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}${
           yearStart ? `&year_start=${yearStart}` : ""
         }${yearEnd ? `&year_end=${yearEnd}` : ""}&media_type=image`
       );
-      await updateResults(response);
+      await updateSearchResults(response);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const ErrorAlert = ({ responseError, onClose }) => {
+    return (
+      <ErrorsContainer>
+        <Alert variant="danger" onClose={onClose} dismissible>
+          <Alert.Heading>{responseError}</Alert.Heading>
+        </Alert>
+      </ErrorsContainer>
+    );
+  }
+
   return (
     <div className="container">
       <Heading>Search NASA Media Library</Heading>
-      {responseError && show && (
-        <ErrorsContainer>
-          <Alert variant="danger" onClose={() => setShow(false)} dismissible>
-            <Alert.Heading>{responseError}</Alert.Heading>
-          </Alert>
-        </ErrorsContainer>
+      {responseError && showAlert && (
+        <ErrorAlert
+          responseError={responseError}
+          onClose={() => setShowAlert(false)}
+        />
       )}
       <TextFielsContainer>
         <label>
-          Query:<span style={{color: "#FF0000"}}>*</span>
+          Query:<StarIcon>*</StarIcon>
           <SearchTextInput
             type="text"
             value={query}
@@ -224,26 +237,31 @@ const Search = () => {
         </LoaderWrapper>
       ) : (
         <CardContainer>
-          {results.map((result) => (
-            <Card style={{ width: "18rem" }} key={result?.data[0]?.nasa_id}>
-              <StyledLink to="/detail" state={{ result, uniqueImages }}>
+          {searchResults.map((searchResult) => (
+            <Card
+              style={{ width: "18rem" }}
+              key={searchResult?.data[0]?.nasa_id}
+            >
+              <StyledLink to="/detail" state={{ searchResult, uniqueImages }}>
                 <CardImage
                   variant="top"
-                  src={result?.links[0]?.href}
-                  alt={result?.data[0]?.title}
+                  src={searchResult?.links[0]?.href}
+                  alt={searchResult?.data[0]?.title}
                   loading="lazy"
                 />
               </StyledLink>
               <Card.Body>
                 <Card.Title>
-                  {result?.data[0]?.title?.substring(0, 50)}
+                  {searchResult?.data[0]?.title?.substring(0, 50)}
                 </Card.Title>
-                {result?.data[0]?.location && (
-                  <Card.Text>Location: {result?.data[0]?.location} </Card.Text>
-                )}
-                {result.data[0].photographer && (
+                {searchResult?.data[0]?.location && (
                   <Card.Text>
-                    Photographer: {result?.data[0]?.photographer}
+                    Location: {searchResult?.data[0]?.location}{" "}
+                  </Card.Text>
+                )}
+                {searchResult.data[0].photographer && (
+                  <Card.Text>
+                    Photographer: {searchResult?.data[0]?.photographer}
                   </Card.Text>
                 )}
               </Card.Body>
