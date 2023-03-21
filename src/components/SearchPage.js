@@ -105,12 +105,63 @@ const Search = () => {
   const [show, setShow] = useState(true);
   const [responseError, setResponseError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [uniqueImages, setUniqueImages] = useState([]);
 
   const clearInputFields = () => {
     setQuery("");
     setYearEnd("");
     setYearStart("");
   };
+
+  const getUniqueImages = (items) => {
+    const images = items.map((item) => item?.links[0]?.href);
+    const uniqueLinks = [...new Set(images)];
+    setUniqueImages(uniqueLinks);
+  };
+
+  const updateResults = async (response) => {
+    switch (response.status) {
+      case 200: {
+        const data = await response.json();
+        const { items } = data.collection;
+        getUniqueImages(items);
+        if (items.length === 0) {
+          setResponseError(
+            "No data available for this search! Reset Your Search"
+          );
+          setShow(true);
+        }
+        setResults(items);
+        clearInputFields();
+        break;
+      }
+      case 400:
+        setResponseError(
+          "The request was unacceptable, often due to invalid parameters."
+        );
+        setShow(true);
+        setResults([]);
+        break;
+      case 404:
+        setResponseError("The requested resource doesn’t exist.");
+        setShow(true);
+        setResults([]);
+        break;
+      case 500:
+      case 502:
+      case 503:
+      case 504:
+        setResponseError("Internal Server Error");
+        setShow(true);
+        setResults([]);
+        break;
+      default:
+        setResponseError("Something went wrong. Please try again later");
+        setShow(true);
+        setResults([]);
+    }
+  };
+
   const handleSearch = async () => {
     try {
       setShow(false);
@@ -120,32 +171,11 @@ const Search = () => {
           yearStart ? `&year_start=${yearStart}` : ""
         }${yearEnd ? `&year_end=${yearEnd}` : ""}&media_type=image`
       );
-      const data = await response.json();
-      updateResults(data);
+      await updateResults(response);
     } catch (error) {
-      handleError(error);
+      console.log(error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const updateResults = (data) => {
-    const { items } = data.collection;
-    if (items.length === 0) {
-      setResponseError("No data available for this search! Reset Your Search");
-      setShow(true);
-    }
-    setResults(items);
-    clearInputFields();
-  };
-
-  const handleError = (error) => {
-    if (error.response) {
-      setResponseError(error.response.data.reason || error.message);
-      setShow(true);
-    } else {
-      setResponseError("Something went wrong. Please try again later.");
-      setShow(true);
     }
   };
 
@@ -161,7 +191,7 @@ const Search = () => {
       )}
       <TextFielsContainer>
         <label>
-          Query:
+          Query:<span style={{color: "#FF0000"}}>*</span>
           <SearchTextInput
             type="text"
             value={query}
@@ -196,11 +226,12 @@ const Search = () => {
         <CardContainer>
           {results.map((result) => (
             <Card style={{ width: "18rem" }} key={result?.data[0]?.nasa_id}>
-              <StyledLink to="/detail" state={{ result }}>
+              <StyledLink to="/detail" state={{ result, uniqueImages }}>
                 <CardImage
                   variant="top"
                   src={result?.links[0]?.href}
                   alt={result?.data[0]?.title}
+                  loading="lazy"
                 />
               </StyledLink>
               <Card.Body>
@@ -212,7 +243,7 @@ const Search = () => {
                 )}
                 {result.data[0].photographer && (
                   <Card.Text>
-                    Photographer: {result?.data[0]?.photographer}{" "}
+                    Photographer: {result?.data[0]?.photographer}
                   </Card.Text>
                 )}
               </Card.Body>

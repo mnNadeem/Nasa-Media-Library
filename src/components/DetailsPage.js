@@ -24,9 +24,9 @@ const LeftContainer = styled.div`
 const RightContainer = styled.div`
   display: flex;
   flex-direction: column;
-  align-self: center;
   width: 500px;
   @media (max-width: 700px) {
+    align-self: center;
     margin-top: 20px;
     width: 300px;
   }
@@ -67,7 +67,7 @@ const ButtonContainer = styled.div`
 
 const DetailsPage = () => {
   const {
-    state: { result },
+    state: { result, uniqueImages },
   } = useLocation();
   const {
     data: [
@@ -75,6 +75,7 @@ const DetailsPage = () => {
     ],
     links: [{ href }],
   } = result;
+
   return (
     <>
       <Conatiner>
