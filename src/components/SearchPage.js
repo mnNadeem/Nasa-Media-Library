@@ -127,6 +127,7 @@ const Search = () => {
     setResponseError(errorMessage);
     setShowAlert(true);
     setSearchResults([]);
+    clearInputFields();
   };
 
   const updateSearchResults = async (response) => {
@@ -151,7 +152,7 @@ const Search = () => {
         );
         break;
       case 404:
-        updateErrorsAndSearchResults("The requested resource doesn’t exist.");
+        updateErrorsAndSearchResults("The requested resource doesn't exist.");
         break;
       case 500:
       case 502:
@@ -191,7 +192,9 @@ const Search = () => {
         </Alert>
       </ErrorsContainer>
     );
-  }
+  };
+
+  const data = {};
 
   return (
     <div className="container">
@@ -237,36 +240,37 @@ const Search = () => {
         </LoaderWrapper>
       ) : (
         <CardContainer>
-          {searchResults.map((searchResult) => (
-            <Card
-              style={{ width: "18rem" }}
-              key={searchResult?.data[0]?.nasa_id}
-            >
-              <StyledLink to="/detail" state={{ searchResult, uniqueImages }}>
-                <CardImage
-                  variant="top"
-                  src={searchResult?.links[0]?.href}
-                  alt={searchResult?.data[0]?.title}
-                  loading="lazy"
-                />
-              </StyledLink>
-              <Card.Body>
-                <Card.Title>
-                  {searchResult?.data[0]?.title?.substring(0, 50)}
-                </Card.Title>
-                {searchResult?.data[0]?.location && (
-                  <Card.Text>
-                    Location: {searchResult?.data[0]?.location}{" "}
-                  </Card.Text>
-                )}
-                {searchResult.data[0].photographer && (
-                  <Card.Text>
-                    Photographer: {searchResult?.data[0]?.photographer}
-                  </Card.Text>
-                )}
-              </Card.Body>
-            </Card>
-          ))}
+          {searchResults.map((searchResult) => {
+            const {
+              data: [{ nasa_id, title, photographer, location }],
+              links: [{ href }],
+            } = searchResult || {};
+            return (
+              <Card style={{ width: "18rem" }} key={nasa_id}>
+                <StyledLink
+                  to="/detail"
+                  state={{
+                    searchResult,
+                    uniqueImages,
+                  }}
+                >
+                  <CardImage
+                    variant="top"
+                    src={href}
+                    alt={title}
+                    loading="lazy"
+                  />
+                </StyledLink>
+                <Card.Body>
+                  <Card.Title>{title?.substring(0, 50)}</Card.Title>
+                  {location && <Card.Text>Location: {location}</Card.Text>}
+                  {photographer && (
+                    <Card.Text>Photographer: {photographer}</Card.Text>
+                  )}
+                </Card.Body>
+              </Card>
+            );
+          })}
         </CardContainer>
       )}
     </div>
