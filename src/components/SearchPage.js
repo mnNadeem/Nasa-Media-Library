@@ -194,8 +194,6 @@ const Search = () => {
     );
   };
 
-  const data = {};
-
   return (
     <div className="container">
       <Heading>Search NASA Media Library</Heading>
